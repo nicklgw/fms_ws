@@ -1,0 +1,14 @@
+[Unit]
+Description=Manage communication between ROBOT and FMS
+
+[Service]
+Type=simple
+User=orangepi
+ExecStart=/usr/bin/bash /opt/ros/humble/share/rics_data_service/launch/rics_data_service.sh
+ExecStop=/usr/bin/killall -INT rics_data_service_node
+KillSignal=SIGINT
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,58 @@
+/rics/rics_data_service:
+  ros__parameters:
+    # true：正常运行 | false：直接退出服务
+    enable_service: true
+    Protocol: 13
+    TransportType: Mqtt
+    # DefaultPath: /home/jem/.rics/etc
+    FmsEnvUrl: https://fms.bzlrobot.com/v1/system/fms-env?env=prod,test
+    RobotConfig:
+      SerialNumber: "FMS-Test-2.5"
+      VerifyFormat: false
+      SyncTime: false
+      RobotType: ""
+      RobotVersion: ""
+      MFGD: ""
+      ICCID: ""
+    DefaultParameter:
+      ReportPeriod: 3000
+      RetryTime: 3
+      RetryPeriod: 5000
+      RadarUploadSwitch: 1
+      SignatureSupport: 0
+      ExtendData: ""
+    MqttConfig:
+      Version: 3
+      Host: fms.bzlrobot.com
+      Port: 1883
+      Qos: 1
+      Insecure: true
+      CleanSession: true
+      MaxInflight: 20
+      KeepAlive: 6
+      ReConnectTime: 10
+      Cafile: ca.pem
+    TopicsConfig:
+      Qos0Topics:
+        - device/+/deviceinfo
+      CacheTopics:
+        - "*"
+        - -device/+/location
+    AppConfig:
+      Protocol: Tcp
+      Type: Server
+      TcpConfig:
+        Host: ""
+        Port: 6868
+    RouterConfig:
+      Host: 192.168.1.1
+      Port: 80
+    DataCollectConfig:
+      CacheFilePath: /var/rics/data/
+      DiskFreePercent: 1
+      UploadFmsServer:
+        Host: fms.bzlrobot.com
+        Port: 443
+      RegisterFmsServer:
+        Usrname: fms
+        Key: I6wTzwoM2oCMUlkkyLu3YRJFd6HtGfAM

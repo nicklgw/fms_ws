@@ -1,0 +1,15 @@
+[Unit]
+Description=Manage communication between ROBOT and FMS
+After=mqtt_client.service parameter_server.service
+
+[Service]
+Type=simple
+User=bzlrobot
+ExecStart=/usr/bin/bash /opt/ros/humble/share/iot_comm/launch/iot_comm.sh
+ExecStop=/usr/bin/killall -INT iot_comm_node
+KillSignal=SIGINT
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

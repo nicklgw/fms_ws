@@ -1,0 +1,14 @@
+<rics>
+  <service>
+    <name>rics_data_service</name>
+    <node>rics_data_service_node</node>
+    <description>A mock service that implement basic example functions .</description>
+    <launch>rics_data_service.launch.py</launch>
+    <container>rics_data_service_container</container>
+    <class>rics::data::RicsDataService</class>
+    <loglevel>Info</loglevel>
+    <commands>
+      <command name="GetOfflineDataList" gateway="CMD_ROBOT_GET_OFFLINE_DATA_LIST" desc="获取离线数据列表" />
+    </commands>
+  </service>
+</rics>

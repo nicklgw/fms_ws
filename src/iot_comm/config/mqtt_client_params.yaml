@@ -1,0 +1,110 @@
+/mqtt_client:
+  ros__parameters:
+    broker:
+      host: fms.bzlrobot.com
+      port: 1883
+      tls:
+        enabled: true
+        ca_certificate: iot_comm/config/rootCA.pem
+    client:
+      id: "FMS-Test-2.5"
+      clean_session: false
+      keep_alive_interval: 60.0
+      tls:
+        verify: false
+        version: 3 # TLS v1.2
+      buffer:
+        enabled: false
+        directory: iot_comm/buffer
+        size: 0
+    bridge:
+      ros2mqtt:
+        ros_topics:
+          - /ping/primitive
+          - /iot/device/exception
+          - /iot/device/all_exception
+          - /iot/device/deviceinfo
+          - /iot/device/login
+          - /iot/device/lock_ack
+          - /iot/device/notify
+          - /iot/device/customInfo
+        /ping/primitive:
+          mqtt_topic: pingpong/primitive
+          primitive: true
+        /iot/device/exception:
+          mqtt_topic: device/FMS-Test-2.5/exception
+          primitive: true
+          ros_type: std_msgs/msg/String
+          advanced:
+            mqtt:
+              qos: 1
+              retained: false
+        /iot/device/all_exception:
+          mqtt_topic: device/FMS-Test-2.5/all-exception
+          primitive: true
+          ros_type: std_msgs/msg/String
+          advanced:
+            mqtt:
+              qos: 1
+              retained: false
+        /iot/device/deviceinfo:
+          mqtt_topic: device/FMS-Test-2.5/deviceinfo
+          primitive: true
+          ros_type: std_msgs/msg/String
+          advanced:
+            mqtt:
+              qos: 1
+              retained: false
+        /iot/device/login:
+          mqtt_topic: device/FMS-Test-2.5/login
+          primitive: true
+          ros_type: std_msgs/msg/String
+          advanced:
+            mqtt:
+              qos: 1
+              retained: false
+        /iot/device/lock_ack:
+          mqtt_topic: device/FMS-Test-2.5/lock-ack
+          primitive: true
+          ros_type: std_msgs/msg/String
+          advanced:
+            mqtt:
+              qos: 1
+              retained: false
+        /iot/device/notify:
+          mqtt_topic: device/FMS-Test-2.5/notify
+          primitive: true
+          ros_type: std_msgs/msg/String
+          advanced:
+            mqtt:
+              qos: 1
+              retained: false
+        /iot/device/customInfo:
+          mqtt_topic: device/FMS-Test-2.5/customInfo
+          primitive: true
+          ros_type: std_msgs/msg/String
+          advanced:
+            mqtt:
+              qos: 1
+              retained: false              
+      mqtt2ros:
+        mqtt_topics:
+          - pingpong/primitive
+          - connect/FMS-Test-2.5/login-ack
+          - connect/FMS-Test-2.5/lock
+          - connect/FMS-Test-2.5/notify-ack
+        pingpong/primitive:
+          ros_topic: /pong/primitive
+          primitive: true
+        connect/FMS-Test-2.5/login-ack:
+          ros_topic: /iot/connect/login_ack
+          primitive: true
+          ros_type: std_msgs/msg/String
+        connect/FMS-Test-2.5/lock:
+          ros_topic: /iot/connect/lock
+          primitive: true
+          ros_type: std_msgs/msg/String
+        connect/FMS-Test-2.5/notify-ack:
+          ros_topic: /iot/connect/notify_ack
+          primitive: true
+          ros_type: std_msgs/msg/String

@@ -1,0 +1,10 @@
+iot_comm:
+  ros__parameters:
+    diagnostic_updater:
+      period: 1.0
+    use_sim_time: false
+    run_frequency: 0.25
+    mqtt_timeout: 60.0
+    scraper_length: 3.0 # 刮板长度
+    did: FMS-Test-2.5
+    software_version: V1.0-20240123-123456
