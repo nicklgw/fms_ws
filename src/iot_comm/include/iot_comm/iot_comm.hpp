@@ -19,7 +19,6 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "iot_comm/msg/custom_info.hpp"
 #include <system_diagnostic_msgs/msg/exception_aggregate.hpp>
-#include <mqtt_client_interfaces/srv/is_connected.hpp>
 
 #include "iot_comm/persist_parameter_client.hpp"
 #include "realtime_tools/realtime_buffer.h"
@@ -68,10 +67,8 @@ class IotComm : public rclcpp::Node
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_vibrate_ = nullptr;                                  // 振动电机开关
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_head_down_ = nullptr;                                // 整平头已放下状态
 
-  rclcpp::Client<mqtt_client_interfaces::srv::IsConnected>::SharedPtr mqtt_conn_client_ = nullptr;
   bool mqtt_is_connected_{false};
   bool mqtt_client_ready_{false};
-  void mqtt_conn_send_request(void);
 
   void exception_agg_cb(const system_diagnostic_msgs::msg::ExceptionAggregate::SharedPtr msg);
   system_diagnostic_msgs::msg::ExceptionAggregate exception_aggregate_;

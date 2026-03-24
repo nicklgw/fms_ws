@@ -27,7 +27,6 @@ find_package(diagnostic_updater REQUIRED)
 find_package(nlohmann_json 3.6.0 REQUIRED)
 find_package(system_diagnostic_msgs REQUIRED)
 find_package(unique_identifier_msgs REQUIRED)
-find_package(mqtt_client_interfaces REQUIRED)
 find_package(realtime_tools REQUIRED)
 find_package(rics_data_service_msgs REQUIRED)
 
@@ -64,7 +63,6 @@ set(project_DEPENDENCIES
   nlohmann_json
   system_diagnostic_msgs
   unique_identifier_msgs
-  mqtt_client_interfaces
   realtime_tools
   rics_data_service_msgs
 )

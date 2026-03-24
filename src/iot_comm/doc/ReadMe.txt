@@ -131,3 +131,12 @@ sudo chmod 0777 /opt/ros/humble/share/parameter_server/param/parameters_via_laun
 topic: command/FMS-Test-2.5/login-ack, 
 payload: {"header":{"msgId":"b43e0a6ea6a406f65ba84c24965205dc","timestamp":1774334711640},"response":{"code":0,"delay":0,"msg":"success"}}
 
+
+
+
+DZY59310002
+
+sudo apt update
+sudo apt install -y libmosquitto-dev
+sudo apt install -y libpoco-dev
+sudo apt install -y libjsoncpp-dev

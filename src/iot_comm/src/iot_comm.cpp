@@ -472,8 +472,6 @@ void IotComm::from_fms_cb(const rics_data_service_msgs::msg::MqttSimple::SharedP
 
 void IotComm::checkConnectionStatus(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
-  // mqtt_conn_send_request();
-
   stat.add<bool>("mqtt_client_ready", mqtt_client_ready_);
   stat.add<bool>("mqtt_is_connected", mqtt_is_connected_);
 
@@ -484,25 +482,6 @@ void IotComm::checkConnectionStatus(diagnostic_updater::DiagnosticStatusWrapper 
   stat.hardware_id = "connection";
   stat.level = diag_level;
   stat.message = diag_message;
-}
-
-void IotComm::mqtt_conn_send_request()
-{
-  if (mqtt_conn_client_->service_is_ready())
-  {
-    const auto request = std::make_shared<mqtt_client_interfaces::srv::IsConnected::Request>();
-
-    mqtt_conn_client_->async_send_request(request, 
-      [this](rclcpp::Client<mqtt_client_interfaces::srv::IsConnected>::SharedFuture result){
-        mqtt_client_ready_ = true;
-        mqtt_is_connected_ = result.get()->connected;
-      });
-  }
-  else
-  {
-    mqtt_client_ready_ = false;
-    mqtt_is_connected_ = false;
-  }
 }
 
 }  // namespace iot_comm
