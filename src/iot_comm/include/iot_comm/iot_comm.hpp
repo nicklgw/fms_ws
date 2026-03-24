@@ -47,31 +47,20 @@ class IotComm : public rclcpp::Node
  private:
 
   rclcpp::Publisher<rics_data_service_msgs::msg::MqttSimple>::SharedPtr pub_to_fms_ = nullptr;         // Robot->FMS    /rics/rics_data_to_fms
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_from_fms_;                                // FMS->Robot    /rics/fms_to_robot
-  void from_fms_cb(const std_msgs::msg::String::SharedPtr msg);
-
-  // rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_deviceinfo_ = nullptr;                                // 机器人实时数据上报
-  // rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_exception_ = nullptr;                                 // 机器人故障信息上报
-  // rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_all_exception_ = nullptr;                             // 机器人全量故障信息上报
-  // rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_device_login_ = nullptr;                              // 机器人开机上报login
+  rclcpp::Subscription<rics_data_service_msgs::msg::MqttSimple>::SharedPtr sub_from_fms_;                                // FMS->Robot    /rics/fms_to_robot
+  void from_fms_cb(const rics_data_service_msgs::msg::MqttSimple::SharedPtr msg);
 
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_connect_login_ack_;                                // FMS响应login
   void connect_login_ack_cb(const std_msgs::msg::String::SharedPtr msg);
   std::atomic_int connect_login_ack_response_code_{-1};
-  // rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_device_lock_notify_ = nullptr;                        // 机器人上报锁机/解锁结果
-  // rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_device_customInfo_ = nullptr;                         // 地面整平机器人上装信息采集
 
-  // rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_connect_lock_;                                     // FMS下发lock指令
   void connect_lock_cb(const std_msgs::msg::String::SharedPtr msg);                                             // 锁机请求回调
-  // rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_device_lock_ack_ = nullptr;                           // 机器人响应lock指令
 
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_vehicle_engage_ = nullptr;                              // 离合器 已结合?
 
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr sub_battery_state_ = nullptr;                 // 订阅电池信息
   rclcpp::Subscription<system_diagnostic_msgs::msg::ExceptionAggregate>::SharedPtr sub_exception_agg_;          // 发布异常代码聚合信息
   rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr sub_sys_state_;                                         // 订阅系统状态
-
-  // rclcpp::Subscription<iot_comm::msg::CustomInfo>::SharedPtr sub_custom_info_;                                  // 上装消息
 
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_odom_ = nullptr;                                 // 订阅里程计信息  
   realtime_tools::RealtimeBuffer<std::shared_ptr<nav_msgs::msg::Odometry>> odom_rt_;
@@ -91,10 +80,8 @@ class IotComm : public rclcpp::Node
   void battery_state_cb(const sensor_msgs::msg::BatteryState::SharedPtr msg);
   std::atomic_int battery_remaining_{0}; // 剩余电量
 
-  // void custom_info_cb(const iot_comm::msg::CustomInfo::SharedPtr msg);
-
   diagnostic_updater::Updater updater_;
-  
+
   void checkConnectionStatus(diagnostic_updater::DiagnosticStatusWrapper & stat);
 
   std::shared_ptr<std::thread> thread_;
@@ -109,6 +96,7 @@ class IotComm : public rclcpp::Node
   std::atomic<bool> head_been_down_{false}; // 整平头已放下状态?
   std::atomic<bool> vibrate_command_{false}; // 振捣电机状态
 
+  std::string iface_;
   std::string mac_;
   std::string ip_;
 

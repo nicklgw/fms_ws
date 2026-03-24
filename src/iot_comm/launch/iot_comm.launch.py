@@ -16,6 +16,6 @@ def generate_launch_description():
             name='iot_comm',
             output="screen",
             parameters=[params_file, {"software_version": software_version}],
-            arguments=['--ros-args', '--log-level', 'ERROR']
+            # arguments=['--ros-args', '--log-level', 'ERROR']
         )
     ])

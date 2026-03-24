@@ -25,6 +25,9 @@ IotComm::IotComm()
   declare_parameter("run_frequency", 1.0);
   run_frequency_ = get_parameter("run_frequency").as_double();
 
+  declare_parameter("iface", "eth0");
+  iface_ = get_parameter("iface").as_string();
+
   declare_parameter("did", "ZHENGPING-001");
   did_ = get_parameter("did").as_string();
 
@@ -38,31 +41,18 @@ IotComm::IotComm()
   scraper_length_ = get_parameter("scraper_length").as_double();
 
   RCLCPP_INFO(get_logger(), "IotComm::IotComm() run_frequency: %.3f, scraper_length: %.3f, did: %s, mqtt_timeout: %.3f, software_version: %s", run_frequency_, scraper_length_, did_.c_str(), mqtt_timeout_, software_version_.c_str());
-  
+
   auto task_stat_msg =  std::make_shared<iot_comm::msg::CustomInfo>();
   task_stat_msg->task_magic = 0;
   task_stat_rt_.writeFromNonRT(task_stat_msg);
 
   pub_to_fms_ = create_publisher<rics_data_service_msgs::msg::MqttSimple>("/rics/rics_data_to_fms", rclcpp::SystemDefaultsQoS());
-  sub_from_fms_ = create_subscription<std_msgs::msg::String>("/rics/fms_to_robot", rclcpp::SystemDefaultsQoS(), std::bind(&IotComm::from_fms_cb, this, std::placeholders::_1));
-
-  // pub_deviceinfo_ = create_publisher<std_msgs::msg::String>("/iot/device/deviceinfo", rclcpp::SystemDefaultsQoS());
-  // pub_exception_ = create_publisher<std_msgs::msg::String>("/iot/device/exception", rclcpp::SystemDefaultsQoS());
-  // pub_all_exception_ = create_publisher<std_msgs::msg::String>("/iot/device/all_exception", rclcpp::SystemDefaultsQoS());
-  // pub_device_login_ = create_publisher<std_msgs::msg::String>("/iot/device/login", rclcpp::SystemDefaultsQoS());
-  
-  // sub_connect_login_ack_ = create_subscription<std_msgs::msg::String>("/iot/connect/login_ack", rclcpp::QoS{1}, std::bind(&IotComm::connect_login_ack_cb, this, std::placeholders::_1));
-  // sub_connect_lock_  = create_subscription<std_msgs::msg::String>("/iot/connect/lock", rclcpp::QoS{1}, std::bind(&IotComm::connect_lock_cb, this, std::placeholders::_1));
-  // pub_device_lock_ack_ = create_publisher<std_msgs::msg::String>("/iot/device/lock_ack", rclcpp::SystemDefaultsQoS());
+  sub_from_fms_ = create_subscription<rics_data_service_msgs::msg::MqttSimple>("/rics/fms_to_robot", rclcpp::SystemDefaultsQoS(), std::bind(&IotComm::from_fms_cb, this, std::placeholders::_1));
 
   pub_vehicle_engage_ = create_publisher<std_msgs::msg::Bool>("/vehicle/engage", 1);
-  // pub_device_lock_notify_ = create_publisher<std_msgs::msg::String>("/iot/device/notify", rclcpp::SystemDefaultsQoS());
-  // pub_device_customInfo_ = create_publisher<std_msgs::msg::String>("/iot/device/customInfo", rclcpp::SystemDefaultsQoS());
 
   sub_battery_state_ = create_subscription<sensor_msgs::msg::BatteryState>("/battery_state", rclcpp::SensorDataQoS().keep_last(1), std::bind(&IotComm::battery_state_cb, this, std::placeholders::_1));
   sub_exception_agg_ = create_subscription<system_diagnostic_msgs::msg::ExceptionAggregate>("/exception_aggregate", rclcpp::QoS{1}, std::bind(&IotComm::exception_agg_cb, this, std::placeholders::_1)); // 订阅异常聚集信息
-
-  // sub_custom_info_ = create_subscription<iot_comm::msg::CustomInfo>("/custom_info", rclcpp::SystemDefaultsQoS(), std::bind(&IotComm::custom_info_cb, this, std::placeholders::_1));
 
   sub_sys_state_ = create_subscription<std_msgs::msg::Int32>(
     "/iot/sys_state", rclcpp::SensorDataQoS().keep_last(1),
@@ -81,11 +71,9 @@ IotComm::IotComm()
     "/dinkle_io/vibrate_cmd", rclcpp::SensorDataQoS().keep_last(1),
     [this](const std_msgs::msg::Bool::SharedPtr msg) { vibrate_command_ = msg->data; });
   
-  // mqtt_conn_client_ = create_client<mqtt_client_interfaces::srv::IsConnected>("/mqtt_client/is_connected");
-  
   period_ = std::chrono::seconds(1) / run_frequency_; // 1Hz
   
-  get_mac_ip("enP3p49s0", mac_, ip_);
+  get_mac_ip(iface_.c_str(), mac_, ip_);
   
   // 节点每次启动，都产生一个随机数
   {
@@ -223,10 +211,6 @@ void IotComm::do_deviceinfo()
   root["BatAlive"] = true;
   root["Timestamp"] = timestamp;
 
-  // std_msgs::msg::String msg;
-  // msg.data = root.dump();
-  // pub_deviceinfo_->publish(msg);
-
   rics_data_service_msgs::msg::MqttSimple mqtt_msg;
   mqtt_msg.topic = std::string("device/") + did_ + std::string("/deviceinfo");
   mqtt_msg.message = root.dump();
@@ -263,10 +247,6 @@ void IotComm::do_all_exception()
     }
   }
   root["ErrList"] = std::move(err_list);
-
-  // std_msgs::msg::String msg;
-  // msg.data = root.dump();
-  // pub_all_exception_->publish(msg);
 
   rics_data_service_msgs::msg::MqttSimple mqtt_msg;
   mqtt_msg.topic = std::string("device/") + did_ + std::string("/all-exception");
@@ -355,12 +335,6 @@ void IotComm::do_customInfo()
     data["thisArea"] = this_area_; // 本次开机，作业面积
 
     root["Data"] = data;
-  
-    // std_msgs::msg::String msg;
-    // msg.data = root.dump();
-    // pub_device_customInfo_->publish(msg);
-
-    // RCLCPP_INFO(get_logger(), "loop customInfo: %s", msg.data.c_str());
 
     rics_data_service_msgs::msg::MqttSimple mqtt_msg;
     mqtt_msg.topic = std::string("device/") + did_ + std::string("/customInfo");
@@ -404,10 +378,6 @@ void IotComm::do_login()
   root["body"] = body;
   root["header"] = header;
   
-  // std_msgs::msg::String msg;
-  // msg.data = root.dump();
-  // pub_device_login_->publish(msg);
-
   rics_data_service_msgs::msg::MqttSimple mqtt_msg;
   mqtt_msg.topic = std::string("device/") + did_ + std::string("/login");
   mqtt_msg.message = root.dump();
@@ -416,8 +386,8 @@ void IotComm::do_login()
 
 void IotComm::connect_login_ack_cb(const std_msgs::msg::String::SharedPtr msg)
 {
-  nlohmann::json root = msg->data;
-  
+  nlohmann::json root = nlohmann::json::parse(msg->data.c_str());
+
   int response_code = root["response"]["code"];
   connect_login_ack_response_code_ = response_code;
 }
@@ -452,10 +422,6 @@ void IotComm::connect_lock_cb(const std_msgs::msg::String::SharedPtr msg)       
     root["MsgID"] = MsgID;
     root["Timestamp"] = timestamp;
 
-    // std_msgs::msg::String msg;
-    // msg.data = root.dump();
-    // pub_device_lock_ack_->publish(msg);
-
     rics_data_service_msgs::msg::MqttSimple mqtt_msg;
     mqtt_msg.topic = std::string("device/") + did_ + std::string("/lock-ack");
     mqtt_msg.message = root.dump();
@@ -471,10 +437,6 @@ void IotComm::connect_lock_cb(const std_msgs::msg::String::SharedPtr msg)       
     root["MsgID"] = MsgID;
     root["Timestamp"] = timestamp;
 
-    // std_msgs::msg::String msg;
-    // msg.data = root.dump();
-    // pub_device_lock_notify_->publish(msg);
-
     rics_data_service_msgs::msg::MqttSimple mqtt_msg;
     mqtt_msg.topic = std::string("device/") + did_ + std::string("/notify");
     mqtt_msg.message = root.dump();
@@ -487,22 +449,24 @@ void IotComm::battery_state_cb(const sensor_msgs::msg::BatteryState::SharedPtr m
   battery_remaining_ = msg->percentage * 100.0; // 百分比
 }
 
-void IotComm::from_fms_cb(const std_msgs::msg::String::SharedPtr msg)
+void IotComm::from_fms_cb(const rics_data_service_msgs::msg::MqttSimple::SharedPtr msg)
 {
-  nlohmann::json root = nlohmann::json::parse(msg->data.c_str());
+  std::string topic = msg->topic;
+  std_msgs::msg::String::SharedPtr payload = std::make_shared<std_msgs::msg::String>();
+  payload->data = msg->message;
 
-  std::string topic = root["topic"];
+  std::string login_ack = std::string("command/") + did_ + std::string("/login-ack");
 
-  std::string login_ack = std::string("connect/") + did_ + std::string("login-ack");
   if (topic == login_ack)
   {
-    connect_login_ack_cb(msg);
+    connect_login_ack_cb(payload);
   }
 
-  std::string lock = std::string("connect/") + did_ + std::string("lock");
+  std::string lock = std::string("connect/") + did_ + std::string("/lock");
+
   if (topic == lock)
   {
-    connect_lock_cb(msg);
+    connect_lock_cb(payload);
   }
 }
 

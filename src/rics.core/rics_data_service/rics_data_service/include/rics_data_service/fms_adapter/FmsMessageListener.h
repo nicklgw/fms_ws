@@ -1,10 +1,11 @@
 #pragma once
+#include <rics_data_service/RicsDefines.h>
 #include <rics_data_service/fms_adapter/MqttTransport.h>
 
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
-#include <std_msgs/msg/string.hpp>
+// #include <std_msgs/msg/string.hpp>
 #include <string>
 
 namespace rics {
@@ -59,7 +60,7 @@ class FmsMessageListener : public IListenner {
  private:
   std::string m_sn;                                                    ///< 设备序列号
   rclcpp::Node::SharedPtr m_rosNode;                                   ///< ROS 2 节点
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr m_rosPublisher;  ///< ROS 2 发布者
+  rclcpp::Publisher<MqttSimple>::SharedPtr m_rosPublisher;             ///< ROS 2 发布者
   bool m_publisherSet = false;                                         ///< 发布者是否已设置
 };
 }  // namespace fms

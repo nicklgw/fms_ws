@@ -123,3 +123,11 @@ sudo chmod 0777 -R /opt/ros/humble/share/iot_comm/buffer
 
 持久化配置文件需要给可写权限
 sudo chmod 0777 /opt/ros/humble/share/parameter_server/param/parameters_via_launch.yaml
+
+
+
+[iot_comm_node-1] [INFO] [1774334711.659002742] [iot_comm]: IotComm::from_fms_cb() 
+
+topic: command/FMS-Test-2.5/login-ack, 
+payload: {"header":{"msgId":"b43e0a6ea6a406f65ba84c24965205dc","timestamp":1774334711640},"response":{"code":0,"delay":0,"msg":"success"}}
+
