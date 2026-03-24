@@ -7,7 +7,7 @@
     # DefaultPath: /home/jem/.rics/etc
     FmsEnvUrl: https://fms.bzlrobot.com/v1/system/fms-env?env=prod,test
     RobotConfig:
-      SerialNumber: "FMS-Test-2.5"
+      SerialNumber: "DZY59310002"
       VerifyFormat: false
       SyncTime: false
       RobotType: ""

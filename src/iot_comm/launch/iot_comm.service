@@ -1,6 +1,6 @@
 [Unit]
 Description=Manage communication between ROBOT and FMS
-After=mqtt_client.service parameter_server.service
+After=rics_data_service.service parameter_server.service
 
 [Service]
 Type=simple

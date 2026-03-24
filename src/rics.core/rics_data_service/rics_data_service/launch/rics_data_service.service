@@ -1,5 +1,5 @@
 [Unit]
-Description=Manage communication between ROBOT and FMS
+Description=A local MQTT agent to manage a connection between FMS and Robot.
 
 [Service]
 Type=simple
