@@ -41,7 +41,7 @@ using namespace boost::posix_time;
 
 FileRepository::FileRepository(const DataCollectOption &dcOption,
                                const RicsBusinessOption &ricsBusinessoption)
-    : m_dcOption(dcOption), m_ricsBusinessOption(ricsBusinessoption) {
+    : m_dcOption(dcOption), m_ricsBusinessOption(ricsBusinessoption), m_call_counter(0) {
   NotifyInit();
   SyncSendbleFilesList();
 }
@@ -140,10 +140,32 @@ std::string FileRepository::DelFile(const string &filepath) {
   }
 }
 
+// ================== 核心修改: 无脑计数 + 强制同步 ==================
 bool FileRepository::HasSendableFile() {
-  std::lock_guard<std::mutex> lk(m_SendbleFilesMtx);
-  bool bret = (m_SendbleFiles.size() <= 0) ? false : true;
-  return bret;
+  std::unique_lock<std::mutex> lk(m_SendbleFilesMtx);
+
+  // 1. 调用次数 +1
+  m_call_counter++;
+
+  // 2. 检查是否达到阈值
+  if (m_call_counter >= kResyncThreshold) {
+    RICS_WARN("HasSendableFile called %d times. Triggering full disk resync...", kResyncThreshold);
+
+    // 先解锁，避免死锁 (SyncSendbleFilesList 内部也会加锁)
+    lk.unlock();
+
+    // 执行全量扫描
+    SyncSendbleFilesList();
+
+    // 重置计数器
+    m_call_counter = 0;
+
+    // 重新加锁以安全返回当前状态
+    lk.lock();
+  }
+
+  // 3. 返回当前是否有文件
+  return (m_SendbleFiles.size() > 0);
 }
 
 string FileRepository::CreateNewFileName(const string &topicName) {
@@ -215,9 +237,9 @@ void FileRepository::EraseCompressedTag(const string &compfile) {
     return;
   }
 
-  for (auto &iter : m_SendbleFiles) {
-    if (iter.second == compfile) {
-      m_SendbleFiles.erase(iter.first);
+  for (auto iter = m_SendbleFiles.begin(); iter != m_SendbleFiles.end(); ++iter) {
+    if (iter->second == compfile) {
+      m_SendbleFiles.erase(iter);
       break;
     }
   }
@@ -259,16 +281,28 @@ bool FileRepository::GetAllFilesFromSpecDir(const string &specdir, list<Filename
   return true;
 }
 
+// ================== 核心优化: 全量同步时必须先 Clear ==================
 void FileRepository::SyncSendbleFilesList() {
   string md5 = "";
   list<FilenameInfo> fileList;
+
+  // 先清空内存列表，防止重复
+  {
+    std::lock_guard<std::mutex> lk(m_SendbleFilesMtx);
+    m_SendbleFiles.clear();
+  }
+
   if (!GetAllFilesFromSpecDir(m_dcOption.cacheFilePath + CompressedFilePath, fileList)) return;
+
+  // 按时间戳排序
   fileList.sort(
       [=](const FilenameInfo &m1, const FilenameInfo &m2) { return m1.stamp < m2.stamp; });
 
+  // 重新加载到内存
   for (auto i : fileList) {
     if (CalcMd5File(i.filePath, md5)) SetCompressedTag(md5, i.filePath);
   }
+  RICS_INFO("Full resync completed. Loaded %zu files.", fileList.size());
 }
 
 int FileRepository::WriteSome(const string &filepath, const string &note, int wsize) {
@@ -463,14 +497,31 @@ void FileRepository::HandleEvents(struct inotify_event *in) {
   }
 }
 
+// ================== 保留优化: inotify 溢出保护 ==================
 void FileRepository::NotifyEvents() {
   char buf[EVENT_BUF_LEN];
   char *p;
   struct inotify_event *event;
   memset(buf, 0, sizeof(buf));
   int cnts = ReadEvents(buf);
+
+  // 检查 read 错误 (通常由队列溢出引起)
+  if (cnts < 0) {
+    RICS_ERROR("inotify read error (%s). Triggering emergency resync.", strerror(errno));
+    SyncSendbleFilesList();
+    return;
+  }
+
   for (p = buf; p < buf + cnts;) {
     event = (struct inotify_event *)p;
+
+    // 显式检查队列溢出事件
+    if (event->mask & IN_Q_OVERFLOW) {
+      RICS_WARN(
+          "IN_Q_OVERFLOW received! File list may be incomplete. Starting emergency resync...");
+      SyncSendbleFilesList();
+    }
+
     HandleEvents(event);
     p += sizeof(struct inotify_event) + event->len;
   }

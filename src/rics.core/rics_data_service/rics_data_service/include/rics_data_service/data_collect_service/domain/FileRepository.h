@@ -145,6 +145,10 @@ class FileRepository : public IFileRepository {
   void HandleEvents(struct inotify_event* in);
 
   void NotifyEvents();
+
+ private:
+  static constexpr int kResyncThreshold = 1000;  // 100秒周期。每调用 N 次触发一次全量扫描
+  int m_call_counter;                           // 调用次数计数器
 };
 
 }  // namespace data_collect
