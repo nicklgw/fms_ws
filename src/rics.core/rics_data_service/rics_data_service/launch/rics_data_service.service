@@ -3,7 +3,7 @@ Description=A local MQTT agent to manage a connection between FMS and Robot.
 
 [Service]
 Type=simple
-User=orangepi
+User=root
 ExecStart=/usr/bin/bash /opt/ros/humble/share/rics_data_service/launch/rics_data_service.sh
 ExecStop=/usr/bin/killall -INT rics_data_service_node
 KillSignal=SIGINT
