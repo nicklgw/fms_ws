@@ -37,7 +37,6 @@ set(dependencies
   diagnostic_msgs
   diagnostic_updater
   rclcpp_components
-  # rics_service_interface
 )
 
 find_package(ament_cmake REQUIRED)
@@ -75,7 +74,6 @@ target_link_libraries(${PROJECT_NAME}
     mosquitto
     jsoncpp
     nlohmann_json::nlohmann_json
-    # uuid
 )
 
 # 添加包含路径
@@ -85,7 +83,6 @@ target_include_directories(${PROJECT_NAME}
     $<INSTALL_INTERFACE:include>
   PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-    # ${rics_data_service_msgs_INCLUDE_DIRS}
 )
 
 # 注册组件依赖
