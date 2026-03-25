@@ -1,0 +1,13 @@
+bdrive_ros2_control:
+  ubuntu: ros-humble-bdrive-ros2-control
+dch_rc_driver:
+  ubuntu: ros-humble-dch-rc-driver
+laser_receiver_driver:
+  ubuntu: ros-humble-laser-receiver-driver
+system_diagnostic_msgs:
+  ubuntu: ros-humble-system-diagnostic-msgs
+serial:
+  ubuntu: ros-humble-serial
+rics_data_service_msgs:
+  ubuntu: ros-humble-rics-data-service-msgs
+

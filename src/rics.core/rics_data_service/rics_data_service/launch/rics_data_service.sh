@@ -5,6 +5,8 @@ source /opt/ros/humble/setup.bash
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 export CYCLONEDDS_URI=file:///etc/cyclonedds.xml
 
+mkdir -m a=rwx -p /var/rics/data
+
 mkdir -m a=rwx -p /var/log/bzlrobot/rics_data_service
 export ROS_LOG_DIR="/var/log/bzlrobot/rics_data_service"
 

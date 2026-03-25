@@ -18,9 +18,9 @@
   <depend>rics_data_service_msgs</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>lifecycle_msgs</depend>
-  <depend>Boost</depend>
-  <depend>libpoco-dev</depend>
-  <depend>libmosquitto-dev</depend>
+  <!-- <depend>Boost</depend> -->
+  <!-- <depend>libpoco-dev</depend> -->
+  <!-- <depend>libmosquitto-dev</depend> -->
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
