@@ -40,11 +40,7 @@ IotComm::IotComm()
   declare_parameter("scraper_length", 2.5);
   scraper_length_ = get_parameter("scraper_length").as_double();
 
-  RCLCPP_INFO(get_logger(), "IotComm::IotComm() run_frequency: %.3f, scraper_length: %.3f, did: %s, mqtt_timeout: %.3f, software_version: %s", run_frequency_, scraper_length_, did_.c_str(), mqtt_timeout_, software_version_.c_str());
-
-  auto task_stat_msg =  std::make_shared<iot_comm::msg::CustomInfo>();
-  task_stat_msg->task_magic = 0;
-  task_stat_rt_.writeFromNonRT(task_stat_msg);
+  RCLCPP_INFO(get_logger(), "IotComm::IotComm() run_frequency: %.3f, scraper_length: %.3f, did: %s, mqtt_timeout: %.3f, software_version: %s", run_frequency_, scraper_length_, did_.c_str(), mqtt_timeout_, software_version_.c_str());  
 
   pub_to_fms_ = create_publisher<rics_data_service_msgs::msg::MqttSimple>("/rics/rics_data_to_fms", rclcpp::SystemDefaultsQoS());
   sub_from_fms_ = create_subscription<rics_data_service_msgs::msg::MqttSimple>("/rics/fms_to_robot", rclcpp::SystemDefaultsQoS(), std::bind(&IotComm::from_fms_cb, this, std::placeholders::_1));
@@ -68,7 +64,7 @@ IotComm::IotComm()
     [this](const std_msgs::msg::Bool::SharedPtr msg) { head_been_down_ = msg->data; });
   
   sub_vibrate_ = create_subscription<std_msgs::msg::Bool>(
-    "/dinkle_io/vibrate_cmd", rclcpp::SensorDataQoS().keep_last(1),
+    "/orangepi_gpio/vm_en", 1,
     [this](const std_msgs::msg::Bool::SharedPtr msg) { vibrate_command_ = msg->data; });
   
   period_ = std::chrono::seconds(1) / run_frequency_; // 1Hz

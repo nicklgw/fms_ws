@@ -5,7 +5,7 @@ iot_comm:
     use_sim_time: false
     run_frequency: 1.0
     mqtt_timeout: 60.0
-    scraper_length: 3.0 # 刮板长度
+    scraper_length: 2.0 # 刮板长度
     iface: enP4p65s0
     did: DZY59310002
     software_version: V1.0-20240123-123456

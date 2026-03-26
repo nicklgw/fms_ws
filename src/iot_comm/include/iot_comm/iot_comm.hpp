@@ -17,7 +17,6 @@
 #include "std_msgs/msg/int32.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "iot_comm/msg/custom_info.hpp"
 #include <system_diagnostic_msgs/msg/exception_aggregate.hpp>
 
 #include "iot_comm/persist_parameter_client.hpp"
@@ -117,8 +116,6 @@ class IotComm : public rclcpp::Node
   double    this_area_ {0.0001}; // 本次程序启动，作业面积 单位:㎡
 
   double scraper_length_  = 2.5; // 刮板长度
-
-  realtime_tools::RealtimeBuffer<std::shared_ptr<iot_comm::msg::CustomInfo>> task_stat_rt_;
 
   PersistParametersClient persist_parameter_client_;
 };

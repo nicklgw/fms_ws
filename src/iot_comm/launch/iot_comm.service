@@ -4,7 +4,7 @@ After=rics_data_service.service parameter_server.service
 
 [Service]
 Type=simple
-User=bzlrobot
+User=orangepi
 ExecStart=/usr/bin/bash /opt/ros/humble/share/iot_comm/launch/iot_comm.sh
 ExecStop=/usr/bin/killall -INT iot_comm_node
 KillSignal=SIGINT
