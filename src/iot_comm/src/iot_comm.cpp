@@ -160,11 +160,25 @@ void IotComm::run_()
   {
     RCLCPP_INFO(get_logger(), "IotComm::run_()");
     
-    do_login();
-    do_deviceinfo();
-    do_all_exception();
+    static uint32_t count = 0;
+    
+    switch(count++%4)
+    {
+    case 0:
+      do_login();
+      break;
+    case 1:
+      do_deviceinfo();
+      break;
+    case 2:
+      do_all_exception();
+      break;
+    case 3:
+      do_customInfo();
+      break;
+    }
+
     do_engage();
-    do_customInfo();
 
     std::this_thread::sleep_for(period_);
   }

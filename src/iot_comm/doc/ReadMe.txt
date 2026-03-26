@@ -13,6 +13,10 @@ bzlrobot@raspberrypi:~/zhengping_ws/iot_comm_ws$ ros2 launch iot_comm mqtt_clien
 # 订阅MQTT话题，验证测试数据
 nick@nick-dell:~/zhengping_ws/iot_comm_ws/src/iot_comm/config$ mosquitto_sub -v --insecure -V mqttv311 -h fms.bzlrobot.com -p 2884 -t "device/ZHENGPING-001/#" --cafile ./rootCA.ros2.pem
 
+
+
+
+
 ros2 mqtt-client 安装并测试
 https://blog.csdn.net/hai411741962/article/details/134593264
 sudo apt update
@@ -140,3 +144,11 @@ sudo apt update
 sudo apt install -y libmosquitto-dev
 sudo apt install -y libpoco-dev
 sudo apt install -y libjsoncpp-dev
+
+
+
+
+
+mosquitto_sub -v --insecure -V mqttv311 -h fms.bzlrobot.com -p 1883 -t "device/DZY59310002/#" --cafile ./ca.pem
+
+device/DZY59310002/all-exception
