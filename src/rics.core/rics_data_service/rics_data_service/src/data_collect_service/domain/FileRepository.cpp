@@ -314,7 +314,21 @@ int FileRepository::WriteSome(const string &filepath, const string &note, int ws
   save.open(filepath, std::ios::binary | std::ios::app | std::ios::out);
   save.write(note.c_str(), wsize);
   int fsize = save.tellp();
+
+  save.flush();  // 刷新 C++ 缓冲区
+
   save.close();
+
+  {
+    int fd = open(filepath.c_str(), O_WRONLY);
+    if (fd != -1) {
+      fsync(fd);  // 确保数据写入磁盘
+      close(fd);
+    } else {
+      RICS_ERROR("Failed to open file for fsync: %s", strerror(errno));
+    }
+  }
+
   RICS_INFO("Cache to temp File :%s!", filepath.c_str());
   return fsize;
 }
