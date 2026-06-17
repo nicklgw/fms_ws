@@ -32,6 +32,8 @@
       KeepAlive: 6
       ReConnectTime: 10
       Cafile: ca.pem
+      UserName: DZY5931000X
+      Password: 20349bf04c16d8399bb9e842adaed5344bc5c324ddc9cb97019ca1313e20259f
     TopicsConfig:
       Qos0Topics:
         - device/+/deviceinfo

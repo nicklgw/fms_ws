@@ -1,5 +1,7 @@
 import os
 import yaml
+import hashlib
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
@@ -20,6 +22,10 @@ def generate_launch_description():
 
         did = data['iot_comm']['ros__parameters']['did']
         print(f"did: {did}")
+
+        raw_str = did + "bmr2026"
+        passwd = hashlib.sha256(raw_str.encode()).hexdigest()
+        print(f"passwd: {passwd}")
 
     except FileNotFoundError:
         print("cannot find iot_config_file.")
@@ -49,7 +55,11 @@ def generate_launch_description():
         # name='rics_data_service',
         namespace='rics',
         output='screen',
-        parameters=[config_file, {"RobotConfig.SerialNumber": did}],
+        parameters=[
+            config_file,
+            {"RobotConfig.SerialNumber": did},
+            {"MqttConfig.UserName": did},
+            {"MqttConfig.Password": passwd}],
         arguments=ros_args,  # 显式传递日志级别参数
     )
 
