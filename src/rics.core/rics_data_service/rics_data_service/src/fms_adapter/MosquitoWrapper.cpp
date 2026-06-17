@@ -10,70 +10,101 @@
 using namespace rics;
 
 MosquitoWrapper::MosquitoWrapper(MqttOption option)
-    : m_option(option), m_pMosquittoHandle(nullptr), m_bExitFlag(false) {
+    : m_option(option), m_pMosquittoHandle(nullptr), m_bExitFlag(false)
+{
   mosquitto_lib_init();
   m_pMosquittoHandle = mosquitto_new(nullptr, option.m_bCleanSession, this);
-  if (!m_pMosquittoHandle) {
+  if (!m_pMosquittoHandle)
+  {
     std::string strError("mosquitto_new fail:");
     strError.append(strerror(errno));
     throw std::runtime_error(strError.c_str());
   }
 }
 
-MosquitoWrapper::~MosquitoWrapper() {
-  if (m_pMosquittoHandle) {
+MosquitoWrapper::~MosquitoWrapper()
+{
+  if (m_pMosquittoHandle)
+  {
     mosquitto_disconnect(m_pMosquittoHandle);
     mosquitto_loop_stop(m_pMosquittoHandle, true);
   }
 
   m_bExitFlag.store(true);
-  if (m_loopThread.joinable()) {
+  if (m_loopThread.joinable())
+  {
     m_loopThread.join();
   }
 
-  if (m_pMosquittoHandle) {
+  if (m_pMosquittoHandle)
+  {
     mosquitto_destroy(m_pMosquittoHandle);
   }
   mosquitto_lib_cleanup();
 }
 
-void MosquitoWrapper::Init(const CallbackList& callbacks) {
+void MosquitoWrapper::Init(const CallbackList &callbacks)
+{
   m_callbacks = callbacks;
   int ret = 0;
 
   // 1. 设置协议版本 (MQTT 3.1.1)
   int version = MQTT_PROTOCOL_V311;
   ret = mosquitto_opts_set(m_pMosquittoHandle, MOSQ_OPT_PROTOCOL_VERSION, &version);
-  if (ret != MOSQ_ERR_SUCCESS) {
+  if (ret != MOSQ_ERR_SUCCESS)
+  {
+    RICS_ERROR("Failed to set MQTT protocol version to 3.1.1: %s", GetErrMsg(ret).c_str());
     throw std::runtime_error(GetErrMsg(ret));
   }
+  RICS_INFO("MQTT protocol version set to 3.1.1");
 
   // 2. 设置用户名密码 (如果有)
-  if (!m_option.m_strUserName.empty() && !m_option.m_strPassword.empty()) {
+  if (!m_option.m_strUserName.empty() && !m_option.m_strPassword.empty())
+  {
     mosquitto_username_pw_set(m_pMosquittoHandle, m_option.m_strUserName.c_str(),
                               m_option.m_strPassword.c_str());
+    // 不打印密码明文，只记录长度
+    RICS_INFO("MQTT username/password set: username=%s, password_len=%zu",
+              m_option.m_strUserName.c_str(), m_option.m_strPassword.size());
+  }
+  else
+  {
+    RICS_INFO("MQTT username/password not configured");
   }
 
-  // 3. 【关键】TLS 初始化逻辑
-  // 只有当有 cafile 时才启用 TLS，或者明确需要 TLS 连接
-  if (!m_option.m_strCafile.empty() || m_option.m_nPort == 8883 || m_option.m_nPort == 2884) {
-    const char* cafile = m_option.m_strCafile.empty() ? nullptr : m_option.m_strCafile.c_str();
-    
-    // 只有当 cafile 不为空时才调用 tls_set
-    if (cafile != nullptr) {
-      ret = mosquitto_tls_set(m_pMosquittoHandle, cafile, nullptr, nullptr, nullptr, nullptr);
-      if (ret != MOSQ_ERR_SUCCESS) {
-        throw std::runtime_error("TLS init failed: " + GetErrMsg(ret));
-      }
+  // 3. TLS 初始化逻辑
+  if (!m_option.m_strCafile.empty())
+  {
+    const char *cafile = m_option.m_strCafile.c_str(); // 已确保非空，三元表达式冗余
+    RICS_INFO("Enabling TLS with CA file: %s", cafile);
+
+    ret = mosquitto_tls_set(m_pMosquittoHandle, cafile, nullptr, nullptr, nullptr, nullptr);
+    if (ret != MOSQ_ERR_SUCCESS)
+    {
+      RICS_ERROR("TLS initialization failed: %s", GetErrMsg(ret).c_str());
+      throw std::runtime_error("TLS init failed: " + GetErrMsg(ret));
     }
+    RICS_INFO("TLS CA file set successfully");
 
     // 4. 设置 insecure 模式（如果需要）
-    if (m_option.m_bInsecure) {
+    if (m_option.m_bInsecure)
+    {
       ret = mosquitto_tls_insecure_set(m_pMosquittoHandle, true);
-      if (ret != MOSQ_ERR_SUCCESS) {
+      if (ret != MOSQ_ERR_SUCCESS)
+      {
+        RICS_ERROR("TLS insecure mode setting failed: %s", GetErrMsg(ret).c_str());
         throw std::runtime_error("TLS insecure set failed: " + GetErrMsg(ret));
       }
+      RICS_WARN("TLS insecure mode enabled (certificate verification disabled)");
     }
+    else
+    {
+      RICS_INFO("TLS insecure mode disabled (certificate verification enabled)");
+    }
+  }
+  else
+  {
+    RICS_INFO("TLS disabled (no CA file provided)");
   }
 
   // 5. 设置回调
@@ -83,12 +114,16 @@ void MosquitoWrapper::Init(const CallbackList& callbacks) {
   mosquitto_subscribe_callback_set(m_pMosquittoHandle, OnSubscribed);
   mosquitto_publish_callback_set(m_pMosquittoHandle, OnPublished);
   mosquitto_max_inflight_messages_set(m_pMosquittoHandle, m_option.m_nMaxInflight);
+  RICS_INFO("MQTT callbacks and max_inflight(%d) configured", m_option.m_nMaxInflight);
 
   StartLoop();
+  RICS_INFO("MQTT loop thread started");
 }
 
-void MosquitoWrapper::StartLoop() {
-  m_loopThread = std::thread([this]() {
+void MosquitoWrapper::StartLoop()
+{
+  m_loopThread = std::thread([this]()
+                             {
     while (!m_bExitFlag.load()) {
       // 调试输出参数值
       // std::cout << "DEBUG - Connecting to: Host=" << m_option.m_strHost
@@ -132,20 +167,25 @@ void MosquitoWrapper::StartLoop() {
         }
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    }
-  });
+    } });
 }
 
-std::string MosquitoWrapper::GetErrMsg(int errCode) {
-  if (MOSQ_ERR_ERRNO == errCode) {
+std::string MosquitoWrapper::GetErrMsg(int errCode)
+{
+  if (MOSQ_ERR_ERRNO == errCode)
+  {
     return strerror(errCode);
-  } else {
+  }
+  else
+  {
     return mosquitto_strerror(errCode);
   }
 }
 
-bool MosquitoWrapper::Send(const std::shared_ptr<MqttMessage>& pMessage) {
-  if (pMessage->m_strTopic.empty()) {
+bool MosquitoWrapper::Send(const std::shared_ptr<MqttMessage> &pMessage)
+{
+  if (pMessage->m_strTopic.empty())
+  {
     return false;
   }
 
@@ -156,12 +196,14 @@ bool MosquitoWrapper::Send(const std::shared_ptr<MqttMessage>& pMessage) {
   //           << ", payload=" << pMessage->m_strPayload << ", qos=" << pMessage->m_nQos
   //           << ", messageId=" << pMessage->m_nMessageId << std::endl;
   RICS_INFO("Send: topic=%s, payload=%s, qos=%d, messageId=%d", pMessage->m_strTopic.c_str(),
-             pMessage->m_strPayload.c_str(), pMessage->m_nQos, pMessage->m_nMessageId);
+            pMessage->m_strPayload.c_str(), pMessage->m_nQos, pMessage->m_nMessageId);
   return MOSQ_ERR_SUCCESS == ret;
 }
 
-bool MosquitoWrapper::Subscribe(const std::string& topic, int qos) {
-  if (!m_pMosquittoHandle || topic.empty()) {
+bool MosquitoWrapper::Subscribe(const std::string &topic, int qos)
+{
+  if (!m_pMosquittoHandle || topic.empty())
+  {
     return false;
   }
   int mid = 0;
@@ -170,37 +212,46 @@ bool MosquitoWrapper::Subscribe(const std::string& topic, int qos) {
   return MOSQ_ERR_SUCCESS == ret;
 }
 
-void MosquitoWrapper::OnConnected(mosquitto* mosHandle, void* pObj, int reasonCode) {
+void MosquitoWrapper::OnConnected(mosquitto *mosHandle, void *pObj, int reasonCode)
+{
   (void)mosHandle;
-  auto pInstance = static_cast<MosquitoWrapper*>(pObj);
-  if (pInstance) {
+  auto pInstance = static_cast<MosquitoWrapper *>(pObj);
+  if (pInstance)
+  {
     // for (const auto& topic : pInstance->m_subTopics)
     // {
     //     mosquitto_subscribe(pInstance->m_pMosquittoHandle,
     //         nullptr, topic.c_str(), pInstance->m_option.m_nQos);
     // }
 
-    if (pInstance->m_callbacks.connectedCallback) {
+    if (pInstance->m_callbacks.connectedCallback)
+    {
       pInstance->m_callbacks.connectedCallback(reasonCode == 0);
     }
   }
 
-  if (reasonCode == 0) {
+  if (reasonCode == 0)
+  {
     // std::cout << "mqtt connect success" << std::endl;
     RICS_INFO("mqtt connect success");
-  } else {
+  }
+  else
+  {
     // std::cout << "OnConnected reason " << reasonCode << std::endl;
     RICS_ERROR("mqtt connect failed, reasonCode: %d", reasonCode);
   }
 }
 
-void MosquitoWrapper::OnDisConnected(mosquitto* mosHandle, void* pObj, int reasonCode) {
+void MosquitoWrapper::OnDisConnected(mosquitto *mosHandle, void *pObj, int reasonCode)
+{
   (void)mosHandle;
-  auto pInstance = static_cast<MosquitoWrapper*>(pObj);
-  if (pInstance && pInstance->m_callbacks.connectedCallback) {
+  auto pInstance = static_cast<MosquitoWrapper *>(pObj);
+  if (pInstance && pInstance->m_callbacks.connectedCallback)
+  {
     pInstance->m_callbacks.connectedCallback(false);
   }
-  if (pInstance && reasonCode != MOSQ_ERR_SUCCESS) {
+  if (pInstance && reasonCode != MOSQ_ERR_SUCCESS)
+  {
     // std::cerr << "Mqtt disconnected: reasonCode: " << reasonCode
     //           << ", strerror: " << pInstance->GetErrMsg(reasonCode) << std::endl;
     RICS_ERROR("Mqtt disconnected: reasonCode: %d, strerror: %s", reasonCode,
@@ -208,50 +259,61 @@ void MosquitoWrapper::OnDisConnected(mosquitto* mosHandle, void* pObj, int reaso
   }
 }
 
-void MosquitoWrapper::OnReceived(mosquitto* mosHandle, void* pObj, const mosquitto_message* pMessage) {
+void MosquitoWrapper::OnReceived(mosquitto *mosHandle, void *pObj, const mosquitto_message *pMessage)
+{
   (void)mosHandle;
-  auto pInstance = static_cast<MosquitoWrapper*>(pObj);
-  if (!pInstance || !pMessage) return;
+  auto pInstance = static_cast<MosquitoWrapper *>(pObj);
+  if (!pInstance || !pMessage)
+    return;
 
   auto msg = std::make_shared<MqttMessage>();
   msg->m_strTopic = pMessage->topic;
-  
+
   // 处理空 payload 的情况
-  if (pMessage->payload && pMessage->payloadlen > 0) {
-    msg->m_strPayload = std::string(static_cast<char*>(pMessage->payload), pMessage->payloadlen);
-  } else {
+  if (pMessage->payload && pMessage->payloadlen > 0)
+  {
+    msg->m_strPayload = std::string(static_cast<char *>(pMessage->payload), pMessage->payloadlen);
+  }
+  else
+  {
     msg->m_strPayload = "";
   }
-  
+
   msg->m_nQos = pMessage->qos;
   msg->m_nMessageId = pMessage->mid;
 
   RICS_INFO("Received: topic=%s, payload=%s, qos=%d", msg->m_strTopic.c_str(),
-             msg->m_strPayload.c_str(), msg->m_nQos);
+            msg->m_strPayload.c_str(), msg->m_nQos);
 
-  if (pInstance->m_callbacks.receivedCallback) {
+  if (pInstance->m_callbacks.receivedCallback)
+  {
     pInstance->m_callbacks.receivedCallback(msg);
   }
 }
 
-void MosquitoWrapper::OnSubscribed(mosquitto* mosHandle, void* pObj, int mid, int qosCount, const int* grantedQos) {
+void MosquitoWrapper::OnSubscribed(mosquitto *mosHandle, void *pObj, int mid, int qosCount, const int *grantedQos)
+{
   (void)mosHandle;
-  auto pInstance = static_cast<MosquitoWrapper*>(pObj);
-  if (!pInstance) return;
+  auto pInstance = static_cast<MosquitoWrapper *>(pObj);
+  if (!pInstance)
+    return;
 
   std::vector<int> qosList(grantedQos, grantedQos + qosCount);
   RICS_INFO("Subscribed: mid=%d, qosCount=%d", mid, qosCount);
 
-  if (pInstance->m_callbacks.subscribedCallback) {
+  if (pInstance->m_callbacks.subscribedCallback)
+  {
     pInstance->m_callbacks.subscribedCallback(mid, qosList);
   }
 }
 
-void MosquitoWrapper::OnPublished(mosquitto* mosHandle, void* pObj, int mid) {
+void MosquitoWrapper::OnPublished(mosquitto *mosHandle, void *pObj, int mid)
+{
   // std::cout << "OnPublished : publish success, mid : " << mid << std::endl;
   (void)mosHandle;
-  auto pInstance = static_cast<MosquitoWrapper*>(pObj);
-  if (pInstance && pInstance->m_callbacks.sendCallback) {
+  auto pInstance = static_cast<MosquitoWrapper *>(pObj);
+  if (pInstance && pInstance->m_callbacks.sendCallback)
+  {
     pInstance->m_callbacks.sendCallback(mid);
   }
 }
