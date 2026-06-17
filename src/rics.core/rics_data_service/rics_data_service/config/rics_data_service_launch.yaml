@@ -7,7 +7,7 @@
     # DefaultPath: /home/jem/.rics/etc
     FmsEnvUrl: https://fms.bzlrobot.com/v1/system/fms-env?env=prod,test
     RobotConfig:
-      SerialNumber: DZY5BB10021
+      SerialNumber: HZP2566910001
       VerifyFormat: false
       SyncTime: false
       RobotType: ""
@@ -32,8 +32,8 @@
       KeepAlive: 6
       ReConnectTime: 10
       Cafile: ca.pem
-      UserName: DZY5BB10021
-      Password: 6698ff974bee7cb0f7073f83a1ec8b8a38351a8374483df41b6c28bd2b01d16c
+      UserName: HZP2566910001
+      Password: 50b4871e661900260b34a44c877af43dd9293754636af4c1140f097698ca0e24
     TopicsConfig:
       Qos0Topics:
         - device/+/deviceinfo
