@@ -52,23 +52,15 @@ IotComm::IotComm()
 
   sub_sys_state_ = create_subscription<std_msgs::msg::Int32>(
     "/iot/sys_state", rclcpp::SensorDataQoS().keep_last(1),
-    [this](const std_msgs::msg::Int32::SharedPtr msg) { sys_state_ = msg->data; });
-  
+    [this](const std_msgs::msg::Int32::SharedPtr msg) { sys_state_ = msg->data; is_running_ = (sys_state_ == 3); });
+
   odom_rt_.writeFromNonRT(std::make_shared<nav_msgs::msg::Odometry>());
   sub_odom_ = create_subscription<nav_msgs::msg::Odometry>(
     "/odom", rclcpp::SystemDefaultsQoS(), 
     [this](const nav_msgs::msg::Odometry::SharedPtr msg) { odom_rt_.writeFromNonRT(msg); }); // 订阅里程计信息
-  
-  sub_head_down_ = create_subscription<std_msgs::msg::Bool>(
-    "/head/down", rclcpp::SensorDataQoS().keep_last(1),
-    [this](const std_msgs::msg::Bool::SharedPtr msg) { head_been_down_ = msg->data; });
-  
-  sub_vibrate_ = create_subscription<std_msgs::msg::Bool>(
-    "/orangepi_gpio/vm_en", 1,
-    [this](const std_msgs::msg::Bool::SharedPtr msg) { vibrate_command_ = msg->data; });
-  
+
   period_ = std::chrono::seconds(1) / run_frequency_; // 1Hz
-  
+
   get_mac_ip(iface_.c_str(), mac_, ip_);
   
   // 节点每次启动，都产生一个随机数
@@ -271,25 +263,25 @@ void IotComm::do_customInfo()
 
   // 上装作业任务统计
   {
-    static bool last_vibrate_command = false;
+    static bool last_is_running = false;
     static double last_odometer = 0.0;
 
     auto odom = *(odom_rt_.readFromRT());
     double odometer = std::hypot(fabs(odom->pose.pose.position.x), fabs(odom->pose.pose.position.y));
 
-    if (!last_vibrate_command && vibrate_command_)
+    if (!last_is_running && is_running_)
     {
       last_odometer = odometer;
     }
 
-    if (vibrate_command_)
+    if (is_running_)
     {
       delta_time = period_.count(); // 每次加4s
       delta_area = fabs(odometer - last_odometer) * scraper_length_;
       last_odometer = odometer;
     }
 
-    last_vibrate_command = vibrate_command_;
+    last_is_running = is_running_;
   }
 
   {
@@ -333,13 +325,13 @@ void IotComm::do_customInfo()
     nlohmann::json data;
 
     data["manualMode"] = 1; // 手动控制模式 0:普通模式；1:作业模式
-    data["rayMode"] = head_been_down_.load(); // 激光调平模式 0:手动；1:自动
-    data["angleMode"] = head_been_down_.load(); // 倾角调平模式 0:手动；1:自动
-    data["workState"] = head_been_down_.load(); // 上装状态 0:未工作；1:工作
+    data["rayMode"] = 1; // head_been_down_.load(); // 激光调平模式 0:手动；1:自动
+    data["angleMode"] = 1; // head_been_down_.load(); // 倾角调平模式 0:手动；1:自动
+    data["workState"] = 1; // head_been_down_.load(); // 上装状态 0:未工作；1:工作
     data["totalWorkTime"] = task_time_ / 60.0 / 60.0; // 累计作业时间
     data["workArea"] = delta_area; // 本次循环作业面积
     data["totalArea"] = task_area_; // 累计作业面积
-    data["vibrateState"] = vibrate_command_.load(); // 振捣状态 0:关闭；1:开启
+    data["vibrateState"] = 1; // vibrate_command_.load(); // 振捣状态 0:关闭；1:开启
     data["thisMagic"] = this_magic_; // 本次开机，生成随机数
     data["thisTime"] = this_time_ / 60.0 / 60.0; // 本次开机，作业时间
     data["thisArea"] = this_area_; // 本次开机，作业面积

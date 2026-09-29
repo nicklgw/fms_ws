@@ -62,9 +62,6 @@ class IotComm : public rclcpp::Node
 
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_odom_ = nullptr;                                 // 订阅里程计信息  
   realtime_tools::RealtimeBuffer<std::shared_ptr<nav_msgs::msg::Odometry>> odom_rt_;
-  
-  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_vibrate_ = nullptr;                                  // 振动电机开关
-  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_head_down_ = nullptr;                                // 整平头已放下状态
 
   bool mqtt_is_connected_{false};
   bool mqtt_client_ready_{false};
@@ -89,8 +86,7 @@ class IotComm : public rclcpp::Node
   std::string did_;
   double run_frequency_;
 
-  std::atomic<bool> head_been_down_{false}; // 整平头已放下状态?
-  std::atomic<bool> vibrate_command_{false}; // 振捣电机状态
+  std::atomic<bool> is_running_{false}; // 系统运行状态
 
   std::string iface_;
   std::string mac_;
