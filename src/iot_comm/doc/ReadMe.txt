@@ -152,3 +152,45 @@ sudo apt install -y libjsoncpp-dev
 mosquitto_sub -v --insecure -V mqttv311 -h fms.bzlrobot.com -p 1883 -t "device/DZY59310002/#" --cafile ./ca.pem
 
 device/DZY59310002/all-exception
+
+
+orangepi@orangepi5plus:~$ rics api call CMD_ROBOT_INFO
+Waiting for an action server to become available...
+Sending goal:
+     request:
+  command: CMD_ROBOT_INFO
+  parameters: []
+  payload: []
+  seq_num: 0
+  type: ''
+  priority: ''
+  loop: 0
+  timestamp: 0
+  checksum: ''
+  session: ''
+
+Goal accepted with ID: 782cf8fc7ab2467481cb9e9b3e320199
+
+Goal finished with status: SUCCEEDED
+Result JSON:
+{
+  "command": "CMD_ROBOT_INFO_ACK",
+  "seqNum": 0,
+  "taskId": "",
+  "resultCode": "SUCCESS",
+  "dataType": "JSON",
+  "loopCounter": 0,
+  "timestamp": 1793954340230,
+  "checksum": "",
+  "data": {
+    "DeviceCode": "HMG68M10004",
+    "DeviceType": "RT-1177",
+    "RobotVersion": "1.0",
+    "MqttUserName": "RT-1177/HMG68M10004",
+    "MqttPassword": "86c84b2eaadf8d176f825f3454876fcb22356ae45da3d10b3f0d1a8916d501c3",
+    "LockedState": false
+  }
+}
+orangepi@orangepi5plus:~$ 
+
+

@@ -68,7 +68,7 @@ set(project_DEPENDENCIES
 )
 
 # Executable target
-add_executable(${PROJECT_NAME}_node src/main.cpp src/iot_comm.cpp src/persist_parameter_client.cpp)
+add_executable(${PROJECT_NAME}_node src/main.cpp src/iot_comm.cpp)
 target_link_libraries(${PROJECT_NAME}_node ${project_LIBRARIES})
 ament_target_dependencies(${PROJECT_NAME}_node ${project_DEPENDENCIES})
 install(TARGETS

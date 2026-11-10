@@ -3,9 +3,4 @@ iot_comm:
     diagnostic_updater:
       period: 1.0
     use_sim_time: false
-    run_frequency: 1.0
-    mqtt_timeout: 60.0
-    scraper_length: 2.0 # 刮板长度
-    iface: enP3p49s0
-    did: HMG68M10002
-    software_version: V1.0-20240123-123456
+    scraper_length: 1.5 # 作业宽度
